@@ -40,12 +40,24 @@ class UserCreate(BaseModel):
     profile: ProfileCreate
 
 
+class ProfileUpdate(BaseModel):
+    age: Optional[int] = Field(default=None, ge=18, le=120)
+    bio: Optional[str] = Field(default=None, max_length=300)
+    city: Optional[str] = None
+    timezone: Optional[str] = None
+    interests: Optional[List[str]] = None
+    socionics_type: Optional[str] = Field(default=None, max_length=8)
+    psychotype: Optional[str] = Field(default=None, max_length=32)
+    reputation_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    activity_score: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+
+
 class UserRead(TimestampSchema):
     id: int
     telegram_id: Optional[int]
     username: Optional[str]
     email: Optional[str]
-    profile: ProfileRead
+    profile: Optional[ProfileRead]
 
 
 class ClusterCreate(BaseModel):
@@ -79,9 +91,19 @@ class ClusterMembershipRead(TimestampSchema):
     role: str
 
 
+class CompatibilityBreakdownRead(BaseModel):
+    socionics: float
+    psycho: float
+    age: float
+    geo: float
+    activity: float
+    reputation: float
+
+
 class Recommendation(BaseModel):
     cluster: ClusterRead
     compatibility_score: float = Field(ge=0.0, le=100.0)
+    breakdown: CompatibilityBreakdownRead
 
 
 class ApplicationCreate(BaseModel):

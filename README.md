@@ -119,7 +119,14 @@ S = 50·SocionicsMatch + 20·PsychoMatch + 10·AgeProximity + 8·GeoProximity + 
    ```bash
    uvicorn quadral_cluster.main:app --reload
    ```
-4. Откройте Swagger UI по адресу `http://127.0.0.1:8000/docs` для тестирования ручек регистрации, кластеров и матчмейкинга.
+
+4. Основные эндпоинты Core API:
+   - `POST /users` — регистрация пользователя и профиля.
+   - `PATCH /users/{user_id}/profile` — обновление профиля и типов.
+   - `GET /clusters/search` — поиск кластеров по языку, городу, активности и возрастному соответствию.
+   - `GET /matchmaking/recommendations` — рекомендации с расшифровкой вкладов в совместимость.
+   - `POST /applications` — подача заявки с расчётом совместимости.
+5. Откройте Swagger UI по адресу `http://127.0.0.1:8000/docs` для тестирования ручек регистрации, кластеров и матчмейкинга.
 
 ## Структура исходного кода
 - `src/quadral_cluster/main.py` — точка входа FastAPI Core API.

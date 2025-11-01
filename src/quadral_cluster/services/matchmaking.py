@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Optional
+from typing import Iterable, Optional, Tuple
 
 from ..models.domain import Cluster, ClusterMembership, Profile
 
@@ -125,7 +125,18 @@ def _compute_geo(candidate: Profile, cluster: Cluster) -> float:
     return 0.0
 
 
-def score_candidate_for_cluster(candidate: Profile, cluster: Cluster, memberships: Iterable[ClusterMembership]) -> float:
+def evaluate_candidate(
+    candidate: Profile, cluster: Cluster, memberships: Iterable[ClusterMembership]
+) -> Tuple[float, CompatibilityBreakdown]:
+    """Return both the compatibility score and detailed breakdown."""
+
     member_profiles = [membership.user.profile for membership in memberships if membership.user.profile]
     breakdown = compute_breakdown(candidate, cluster, member_profiles)
-    return round(breakdown.total, 2)
+    return round(breakdown.total, 2), breakdown
+
+
+def score_candidate_for_cluster(
+    candidate: Profile, cluster: Cluster, memberships: Iterable[ClusterMembership]
+) -> float:
+    score, _ = evaluate_candidate(candidate, cluster, memberships)
+    return score

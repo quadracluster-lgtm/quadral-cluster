@@ -4,11 +4,17 @@ from fastapi import FastAPI
 
 from .api.routes import router
 from .config import get_settings
+from .database import Base, engine
 
 settings = get_settings()
 
 app = FastAPI(title="Quadral Cluster Core API", debug=settings.debug)
 app.include_router(router)
+
+
+@app.on_event("startup")
+def on_startup() -> None:
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health", tags=["health"])
