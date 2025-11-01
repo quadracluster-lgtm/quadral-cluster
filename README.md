@@ -108,3 +108,23 @@ S = 50·SocionicsMatch + 20·PsychoMatch + 10·AgeProximity + 8·GeoProximity + 
 - **M1 (2–3 месяц):** голосования, чаты (топики), платёжка, триал.
 - **M2 (4–5 месяц):** модерация, аналитика, рейтинг, Trust Score.
 - **M3 (6 месяц):** Pro-подписка, обучение, публичные кластеры.
+
+## Локальный запуск Core API
+1. Создайте и активируйте виртуальное окружение Python 3.11+.
+2. Установите зависимости проекта:
+   ```bash
+   pip install -e .
+   ```
+3. Запустите FastAPI-приложение:
+   ```bash
+   uvicorn quadral_cluster.main:app --reload
+   ```
+4. Откройте Swagger UI по адресу `http://127.0.0.1:8000/docs` для тестирования ручек регистрации, кластеров и матчмейкинга.
+
+## Структура исходного кода
+- `src/quadral_cluster/main.py` — точка входа FastAPI Core API.
+- `src/quadral_cluster/api/routes.py` — REST-ручки для пользователей, кластеров, заявок и тестов.
+- `src/quadral_cluster/models/domain.py` — ORM-модели SQLAlchemy.
+- `src/quadral_cluster/services/matchmaking.py` — реализация формулы совместимости.
+- `src/quadral_cluster/schemas.py` — Pydantic-схемы запросов и ответов.
+- `src/quadral_cluster/config.py` и `database.py` — конфигурация и подключение к БД.
