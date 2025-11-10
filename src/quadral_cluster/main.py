@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
-from .api.routes import router
-from .config import get_settings
-from .database import Base, engine
+from quadral_cluster.api.routes import router
+from quadral_cluster.config import get_settings
+from quadral_cluster.database import Base, engine
 
 settings = get_settings()
 

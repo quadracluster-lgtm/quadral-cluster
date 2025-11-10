@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Generator
+from collections.abc import Iterator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from .config import get_settings
+from quadral_cluster.config import get_settings
 
 
 # SQLAlchemy Base (v2)
@@ -34,7 +34,7 @@ SessionLocal = sessionmaker(
 
 
 # FastAPI dependency: именно генератор, НЕ @contextmanager
-def get_session() -> Generator[Session, None, None]:
+def get_session() -> Iterator[Session]:
     db: Session = SessionLocal()
     try:
         yield db
