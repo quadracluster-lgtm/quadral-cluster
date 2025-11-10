@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
 
-from ..models.domain import Cluster, ClusterMembership, Profile
+from quadral_cluster.models.domain import Cluster, ClusterMembership, Profile
 
 SOCIONICS_TO_QUADRA = {
     "ILE": "Alpha",

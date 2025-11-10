@@ -1,26 +1,22 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, List
+from collections.abc import Iterable
+from typing import TYPE_CHECKING, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
-from ..database import get_session
-from typing import List
-
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
-from ..database import Base, engine, get_session
-from ..models.domain import (
+from quadral_cluster.database import get_session
+from quadral_cluster.models.domain import (
     Application,
+    ApplicationStatusEnum,
     Cluster,
     ClusterMembership,
     Profile,
     TestResult,
     User,
 )
-from ..schemas import (
+from quadral_cluster.schemas import (
     ApplicationCreate,
     ApplicationRead,
     ClusterCreate,
@@ -34,10 +30,11 @@ from ..schemas import (
     UserCreate,
     UserRead,
 )
-from ..services.matchmaking import evaluate_candidate
+from quadral_cluster.services.matchmaking import evaluate_candidate
 
 if TYPE_CHECKING:  # pragma: no cover - type checking helper
-    from ..services.matchmaking import CompatibilityBreakdown
+    from quadral_cluster.services.matchmaking import CompatibilityBreakdown
+
 
 router = APIRouter()
 
@@ -70,12 +67,6 @@ def _matches_candidate_age(memberships: Iterable[ClusterMembership], candidate_a
         return True
     avg_age = sum(ages) / len(ages)
     return abs(candidate_age - avg_age) <= 5
-from ..services.matchmaking import score_candidate_for_cluster
-
-
-Base.metadata.create_all(bind=engine)
-
-router = APIRouter()
 
 
 @router.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
@@ -139,14 +130,6 @@ def list_user_tests(user_id: int, session: Session = Depends(get_session)) -> Li
         .all()
     )
     return [TestResultRead.model_validate(result) for result in results]
-
-
-@router.get("/users/{user_id}", response_model=UserRead)
-def get_user(user_id: int, session: Session = Depends(get_session)) -> UserRead:
-    user = session.get(User, user_id)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return UserRead.model_validate(user)
 
 
 @router.post("/clusters", response_model=ClusterRead, status_code=status.HTTP_201_CREATED)
@@ -273,7 +256,7 @@ def create_application(payload: ApplicationCreate, session: Session = Depends(ge
     application = Application(
         user_id=user.id,
         cluster_id=cluster.id,
-        status="pending",
+        status=ApplicationStatusEnum.PENDING,
         compatibility_score=compatibility,
     )
     session.add(application)

@@ -3,27 +3,25 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .models.domain import ApplicationStatusEnum
 
 
-# Базовая схема с едиными настройками Pydantic v2
-class TimestampSchema(BaseModel):
+class BaseSchema(BaseModel):
+    """Common configuration for Pydantic schemas."""
+
+    model_config = ConfigDict(from_attributes=True, use_enum_values=True)
+
+
+class TimestampSchema(BaseSchema):
     created_at: datetime
     updated_at: datetime
-
-    # from_attributes: позволяет брать поля из ORM-моделей
-    # use_enum_values: сериализует Enum как их значения (строки)
-    model_config = ConfigDict(
-        from_attributes=True,
-        use_enum_values=True,
-    )
 
 
 # ---------- Профиль пользователя ----------
 
-class ProfileCreate(BaseModel):
+class ProfileCreate(BaseSchema):
     age: Optional[int] = Field(default=None, ge=18, le=120)
     bio: Optional[str] = Field(default=None, max_length=300)
     city: Optional[str] = None
@@ -41,14 +39,14 @@ class ProfileRead(ProfileCreate, TimestampSchema):
 
 # ---------- Пользователь ----------
 
-class UserCreate(BaseModel):
+class UserCreate(BaseSchema):
     telegram_id: Optional[int] = None
     username: Optional[str] = Field(default=None, max_length=64)
     email: Optional[str] = Field(default=None, max_length=255)
     profile: ProfileCreate
 
 
-class ProfileUpdate(BaseModel):
+class ProfileUpdate(BaseSchema):
     age: Optional[int] = Field(default=None, ge=18, le=120)
     bio: Optional[str] = Field(default=None, max_length=300)
     city: Optional[str] = None
@@ -70,7 +68,7 @@ class UserRead(TimestampSchema):
 
 # ---------- Кластер ----------
 
-class ClusterCreate(BaseModel):
+class ClusterCreate(BaseSchema):
     name: str
     language: str = Field(default="ru", max_length=32)
     city: Optional[str] = None
@@ -106,7 +104,7 @@ class ClusterMembershipRead(TimestampSchema):
 
 # ---------- Матчмейкинг / Заявки ----------
 
-class CompatibilityBreakdownRead(BaseModel):
+class CompatibilityBreakdownRead(BaseSchema):
     socionics: float
     psycho: float
     age: float
@@ -115,13 +113,13 @@ class CompatibilityBreakdownRead(BaseModel):
     reputation: float
 
 
-class Recommendation(BaseModel):
+class Recommendation(BaseSchema):
     cluster: ClusterRead
     compatibility_score: float = Field(ge=0.0, le=100.0)
     breakdown: CompatibilityBreakdownRead
 
 
-class ApplicationCreate(BaseModel):
+class ApplicationCreate(BaseSchema):
     user_id: int
     cluster_id: int
 
@@ -136,7 +134,7 @@ class ApplicationRead(TimestampSchema):
 
 # ---------- Тесты ----------
 
-class TestResultCreate(BaseModel):
+class TestResultCreate(BaseSchema):
     user_id: int
     test_type: str
     socionics_type: Optional[str] = None
