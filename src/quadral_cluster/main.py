@@ -1,22 +1,31 @@
-from __future__ import annotations
-
+# src/quadral_cluster/main.py
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-from quadral_cluster.api.routes import router
-from quadral_cluster.config import get_settings
-from quadral_cluster.database import Base, engine
+# если у тебя роутер лежит в другом модуле — поправь импорт
+from .api.routes import router
 
-settings = get_settings()
+app = FastAPI(
+    title="Quadral Cluster API",
+    version="0.3.0",
+    docs_url="/docs",         # ВКЛЮЧИТЬ Swagger UI
+    redoc_url=None,
+    openapi_url="/openapi.json",
+)
 
-app = FastAPI(title="Quadral Cluster Core API", debug=settings.debug)
+# Разрешим CORS на время разработки
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Подключаем твои эндпоинты
+# Если ты хочешь префикс — используй: app.include_router(router, prefix="/api")
 app.include_router(router)
 
-
-@app.on_event("startup")
-def on_startup() -> None:
-    Base.metadata.create_all(bind=engine)
-
-
-@app.get("/health", tags=["health"])
-def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
+# Health-check на корне, чтобы / не давал 404
+@app.get("/", tags=["health"])
+def root():
+    return {"status": "ok", "docs": "/docs", "openapi": "/openapi.json"}
