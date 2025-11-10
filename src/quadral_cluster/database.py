@@ -1,40 +1,42 @@
-from contextlib import contextmanager
+from __future__ import annotations
+
+from typing import Generator
 
 from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, declarative_base, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import get_settings
 
+
+# SQLAlchemy Base (v2)
+class Base(DeclarativeBase):
+    pass
+
+
+# Settings
 settings = get_settings()
 
+# Engine (SQLite по умолчанию, см. config.py)
 engine = create_engine(
-    settings.database_url,
-    connect_args={"check_same_thread": False}
-    if settings.database_url.startswith("sqlite")
-    else {},
+    settings.database_url,  # например: "sqlite:///./dev.db"
+    future=True,
+    echo=False,
 )
-SessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
 
-Base = declarative_base()
+# Фабрика сессий
+SessionLocal = sessionmaker(
+    bind=engine,
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+    class_=Session,
+)
 
 
-@contextmanager
-def session_scope() -> Session:
-    """Provide a transactional scope around a series of operations."""
-
-    session: Session = SessionLocal()
+# FastAPI dependency: именно генератор, НЕ @contextmanager
+def get_session() -> Generator[Session, None, None]:
+    db: Session = SessionLocal()
     try:
-        yield session
-        session.commit()
-    except Exception:
-        session.rollback()
-        raise
+        yield db
     finally:
-        session.close()
-
-
-def get_session():
-    """FastAPI dependency that yields a database session."""
-
-    with session_scope() as session:
-        yield session
+        db.close()
