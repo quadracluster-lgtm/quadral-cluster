@@ -3,18 +3,20 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .models.domain import ApplicationStatusEnum
 
 
 class TimestampSchema(BaseModel):
+    model_config = ConfigDict(
+        use_enum_values=True,
+        from_attributes=True,
+    )
+
+    id: int
     created_at: datetime
     updated_at: datetime
-
-    model_config = {
-        "from_attributes": True,
-    }
 
 
 class ProfileCreate(BaseModel):
@@ -30,8 +32,7 @@ class ProfileCreate(BaseModel):
 
 
 class ProfileRead(ProfileCreate, TimestampSchema):
-    id: int
-
+    
 
 class UserCreate(BaseModel):
     telegram_id: Optional[int] = None
@@ -53,7 +54,6 @@ class ProfileUpdate(BaseModel):
 
 
 class UserRead(TimestampSchema):
-    id: int
     telegram_id: Optional[int]
     username: Optional[str]
     email: Optional[str]
@@ -73,7 +73,6 @@ class ClusterCreate(BaseModel):
 
 
 class ClusterRead(TimestampSchema):
-    id: int
     name: str
     language: str
     city: Optional[str]
@@ -85,7 +84,6 @@ class ClusterRead(TimestampSchema):
 
 
 class ClusterMembershipRead(TimestampSchema):
-    id: int
     cluster_id: int
     user_id: int
     role: str
@@ -112,7 +110,6 @@ class ApplicationCreate(BaseModel):
 
 
 class ApplicationRead(TimestampSchema):
-    id: int
     user_id: int
     cluster_id: int
     status: ApplicationStatusEnum
@@ -128,7 +125,6 @@ class TestResultCreate(BaseModel):
 
 
 class TestResultRead(TimestampSchema):
-    id: int
     user_id: int
     test_type: str
     socionics_type: Optional[str]

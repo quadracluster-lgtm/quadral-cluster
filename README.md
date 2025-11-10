@@ -111,22 +111,32 @@ S = 50·SocionicsMatch + 20·PsychoMatch + 10·AgeProximity + 8·GeoProximity + 
 
 ## Локальный запуск Core API
 1. Создайте и активируйте виртуальное окружение Python 3.11+.
-2. Установите зависимости проекта:
    ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   ```
+2. Установите и обновите инструменты и зависимости проекта:
+   ```bash
+   pip install --upgrade pip
    pip install -e .
    ```
 3. Запустите FastAPI-приложение:
    ```bash
-   uvicorn quadral_cluster.main:app --reload
+   python -m uvicorn src.quadral_cluster.main:app --host 0.0.0.0 --port 8000 --reload
    ```
 
-4. Основные эндпоинты Core API:
+4. Запустите тесты:
+   ```bash
+   pytest -q
+   ```
+
+5. Основные эндпоинты Core API:
    - `POST /users` — регистрация пользователя и профиля.
    - `PATCH /users/{user_id}/profile` — обновление профиля и типов.
    - `GET /clusters/search` — поиск кластеров по языку, городу, активности и возрастному соответствию.
    - `GET /matchmaking/recommendations` — рекомендации с расшифровкой вкладов в совместимость.
    - `POST /applications` — подача заявки с расчётом совместимости.
-5. Откройте Swagger UI по адресу `http://127.0.0.1:8000/docs` для тестирования ручек регистрации, кластеров и матчмейкинга.
+6. Откройте Swagger UI по адресу `http://127.0.0.1:8000/docs` для тестирования ручек регистрации, кластеров и матчмейкинга.
 
 ## Структура исходного кода
 - `src/quadral_cluster/main.py` — точка входа FastAPI Core API.

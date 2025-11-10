@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
-from sqlalchemy import DateTime, Enum, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, UniqueConstraint
+from sqlalchemy import Enum as SAEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -82,10 +84,10 @@ class ClusterMembership(Base, TimestampMixin):
     user: Mapped[User] = relationship(back_populates="memberships")
 
 
-class ApplicationStatusEnum(str, Enum):  # type: ignore[call-arg]
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
+class ApplicationStatusEnum(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
 
 
 class Application(Base, TimestampMixin):
@@ -94,7 +96,10 @@ class Application(Base, TimestampMixin):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     cluster_id: Mapped[int] = mapped_column(ForeignKey("clusters.id", ondelete="CASCADE"))
-    status: Mapped[str] = mapped_column(String(16), default=ApplicationStatusEnum.PENDING.value)
+    status: Mapped[ApplicationStatusEnum] = mapped_column(
+        SAEnum(ApplicationStatusEnum, native_enum=False, name="application_status"),
+        default=ApplicationStatusEnum.pending,
+    )
     compatibility_score: Mapped[Optional[float]] = mapped_column(Float)
 
     user: Mapped[User] = relationship(back_populates="applications")
