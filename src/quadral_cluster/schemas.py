@@ -1,23 +1,27 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional, List
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from .models.domain import ApplicationStatusEnum
 
 
+# Базовая схема с едиными настройками Pydantic v2
 class TimestampSchema(BaseModel):
-    model_config = ConfigDict(
-        use_enum_values=True,
-        from_attributes=True,
-    )
-
-    id: int
     created_at: datetime
     updated_at: datetime
 
+    # from_attributes: позволяет брать поля из ORM-моделей
+    # use_enum_values: сериализует Enum как их значения (строки)
+    model_config = ConfigDict(
+        from_attributes=True,
+        use_enum_values=True,
+    )
+
+
+# ---------- Профиль пользователя ----------
 
 class ProfileCreate(BaseModel):
     age: Optional[int] = Field(default=None, ge=18, le=120)
@@ -32,7 +36,10 @@ class ProfileCreate(BaseModel):
 
 
 class ProfileRead(ProfileCreate, TimestampSchema):
-    
+    id: int
+
+
+# ---------- Пользователь ----------
 
 class UserCreate(BaseModel):
     telegram_id: Optional[int] = None
@@ -54,11 +61,14 @@ class ProfileUpdate(BaseModel):
 
 
 class UserRead(TimestampSchema):
+    id: int
     telegram_id: Optional[int]
     username: Optional[str]
     email: Optional[str]
     profile: Optional[ProfileRead]
 
+
+# ---------- Кластер ----------
 
 class ClusterCreate(BaseModel):
     name: str
@@ -69,10 +79,14 @@ class ClusterCreate(BaseModel):
     target_psychotype: Optional[str] = None
     activity_score: float = Field(default=0.5, ge=0.0, le=1.0)
     reputation_score: float = Field(default=0.5, ge=0.0, le=1.0)
-    founder_user_id: Optional[int] = Field(default=None, description="User that will become the cluster founder")
+    founder_user_id: Optional[int] = Field(
+        default=None,
+        description="User that will become the cluster founder",
+    )
 
 
 class ClusterRead(TimestampSchema):
+    id: int
     name: str
     language: str
     city: Optional[str]
@@ -84,10 +98,13 @@ class ClusterRead(TimestampSchema):
 
 
 class ClusterMembershipRead(TimestampSchema):
+    id: int
     cluster_id: int
     user_id: int
     role: str
 
+
+# ---------- Матчмейкинг / Заявки ----------
 
 class CompatibilityBreakdownRead(BaseModel):
     socionics: float
@@ -110,11 +127,14 @@ class ApplicationCreate(BaseModel):
 
 
 class ApplicationRead(TimestampSchema):
+    id: int
     user_id: int
     cluster_id: int
     status: ApplicationStatusEnum
     compatibility_score: Optional[float]
 
+
+# ---------- Тесты ----------
 
 class TestResultCreate(BaseModel):
     user_id: int
@@ -125,6 +145,7 @@ class TestResultCreate(BaseModel):
 
 
 class TestResultRead(TimestampSchema):
+    id: int
     user_id: int
     test_type: str
     socionics_type: Optional[str]
