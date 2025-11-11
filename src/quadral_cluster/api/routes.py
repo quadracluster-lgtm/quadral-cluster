@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, selectinload
 
-from quadral_cluster.database import get_session
+from ..database import get_session
 from quadral_cluster.models.domain import (
     Application,
     ApplicationStatusEnum,
