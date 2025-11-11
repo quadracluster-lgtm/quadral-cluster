@@ -1,42 +1,30 @@
-from __future__ import annotations
-
-from collections.abc import Iterator
+from typing import Generator
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
-from quadral_cluster.config import get_settings
+from .config import get_settings
 
 
-# SQLAlchemy Base (v2)
 class Base(DeclarativeBase):
-    pass
+    """Base class for SQLAlchemy declarative models."""
 
 
-# Settings
-settings = get_settings()
+_settings = get_settings()
 
-# Engine (SQLite по умолчанию, см. config.py)
-engine = create_engine(
-    settings.database_url,  # например: "sqlite:///./dev.db"
-    future=True,
-    echo=False,
-)
-
-# Фабрика сессий
-SessionLocal = sessionmaker(
-    bind=engine,
-    autocommit=False,
-    autoflush=False,
-    expire_on_commit=False,
-    class_=Session,
-)
+engine = create_engine(_settings.database_url, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, future=True)
 
 
-# FastAPI dependency: именно генератор, НЕ @contextmanager
-def get_session() -> Iterator[Session]:
-    db: Session = SessionLocal()
+def get_session() -> Generator[Session, None, None]:
+    """Yield a database session for FastAPI dependencies."""
+
+    session: Session = SessionLocal()
     try:
-        yield db
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
     finally:
-        db.close()
+        session.close()
