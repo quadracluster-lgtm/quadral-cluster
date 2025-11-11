@@ -1,25 +1,16 @@
-.PHONY: setup run test lint typecheck fmt
+.PHONY: dev run test lint fmt
 
-VENV?=.venv
-PY?=$(VENV)/bin/python
-PIP?=$(VENV)/bin/pip
-
-setup:
-	python -m venv $(VENV)
-	$(PIP) install --upgrade pip
-	$(PIP) install -e .[dev]
+dev:
+	python -m venv .venv && . .venv/bin/activate && pip install --upgrade pip && pip install -e .[dev] || pip install -e . && pip install pytest httpx ruff
 
 run:
-	$(VENV)/bin/uvicorn src.quadral_cluster.main:app --host 0.0.0.0 --port 8000 --reload
+	. .venv/bin/activate && uvicorn src.quadral_cluster.main:app --host 0.0.0.0 --port 8000 --reload
 
 test:
-	$(VENV)/bin/pytest -q
+	. .venv/bin/activate && pytest -q
 
 lint:
-	$(VENV)/bin/ruff check .
+	. .venv/bin/activate && ruff check .
 
 fmt:
-	$(VENV)/bin/ruff check . --fix
-
-typecheck:
-	$(VENV)/bin/mypy src
+	. .venv/bin/activate && ruff check . --fix
