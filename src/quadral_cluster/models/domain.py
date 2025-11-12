@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import (
     DateTime,
@@ -17,6 +17,11 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from quadral_cluster.database import Base
+
+if TYPE_CHECKING:
+    from .availability import Availability
+    from .cluster import MatchingClusterMember
+    from .preference import Preference
 
 
 class TimestampMixin:
@@ -35,11 +40,32 @@ class User(Base, TimestampMixin):
     email: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
     socionics_type: Mapped[str] = mapped_column(String(8), nullable=False)
     quadra: Mapped[Optional[str]] = mapped_column(String(16))
+    timezone: Mapped[Optional[str]] = mapped_column(String(64))
+    age: Mapped[Optional[int]] = mapped_column(Integer)
+    city: Mapped[Optional[str]] = mapped_column(String(120))
 
     profile: Mapped["Profile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
     memberships: Mapped[List["ClusterMembership"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     applications: Mapped[List["Application"]] = relationship(back_populates="user", cascade="all, delete-orphan")
     test_results: Mapped[List["TestResult"]] = relationship(back_populates="user", cascade="all, delete-orphan")
+    availability: Mapped[Optional["Availability"]] = relationship(
+        "Availability", back_populates="user", cascade="all, delete-orphan", uselist=False
+    )
+    preferences_from: Mapped[List["Preference"]] = relationship(
+        "Preference",
+        back_populates="from_user",
+        cascade="all, delete-orphan",
+        foreign_keys="Preference.from_user_id",
+    )
+    preferences_to: Mapped[List["Preference"]] = relationship(
+        "Preference",
+        back_populates="to_user",
+        cascade="all, delete-orphan",
+        foreign_keys="Preference.to_user_id",
+    )
+    matching_membership: Mapped[Optional["MatchingClusterMember"]] = relationship(
+        "MatchingClusterMember", back_populates="user", cascade="all, delete-orphan", uselist=False
+    )
 
 
 class Profile(Base, TimestampMixin):
