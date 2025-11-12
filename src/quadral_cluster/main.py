@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .api.routes import router
+from .api.routes_matching import router as matching_router
 from .database import Base, engine
 
 app = FastAPI(
@@ -20,11 +21,13 @@ app.add_middleware(
 )
 
 app.include_router(router)
+app.include_router(matching_router)
 
 
 @app.on_event("startup")
 def on_startup() -> None:
     from .models import domain  # noqa: F401 - ensure models are imported
+    from .models import availability, cluster, preference  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 
