@@ -3,25 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Optional, Tuple
 
+from quadral_cluster.domain.socionics import QUADRA_MEMBERS, Quadra, SocType
 from quadral_cluster.models.domain import Cluster, ClusterMembership, Profile
 
 SOCIONICS_TO_QUADRA = {
-    "ILE": "Alpha",
-    "SEI": "Alpha",
-    "ESE": "Alpha",
-    "LII": "Alpha",
-    "SLE": "Beta",
-    "IEI": "Beta",
-    "EIE": "Beta",
-    "LSI": "Beta",
-    "LIE": "Gamma",
-    "ESI": "Gamma",
-    "SEE": "Gamma",
-    "ILI": "Gamma",
-    "LSE": "Delta",
-    "EII": "Delta",
-    "IEE": "Delta",
-    "SLI": "Delta",
+    soc_type.value: quadra.value.capitalize()
+    for quadra, members in QUADRA_MEMBERS.items()
+    for soc_type in members
 }
 
 
@@ -140,3 +128,49 @@ def score_candidate_for_cluster(
 ) -> float:
     score, _ = evaluate_candidate(candidate, cluster, memberships)
     return score
+
+
+def _extract_field(entity: object, field: str) -> Optional[object]:
+    if isinstance(entity, dict):
+        return entity.get(field)
+    return getattr(entity, field, None)
+
+
+def _coerce_soc_type(value: object) -> Optional[SocType]:
+    if isinstance(value, SocType):
+        return value
+    if value is None:
+        return None
+    text = str(value)
+    if text.startswith("SocType."):
+        text = text.split(".", 1)[1]
+    text = text.upper()
+    try:
+        return SocType(text)
+    except ValueError:
+        return None
+
+
+def build_quadra_cluster(users: list, target_quadra: Quadra) -> dict:
+    """Select one representative per sociotype for the requested quadra."""
+
+    required_types = {soc_type: None for soc_type in QUADRA_MEMBERS[target_quadra]}
+
+    for user in users:
+        soc_type = _coerce_soc_type(_extract_field(user, "socionics_type"))
+        if soc_type is None:
+            continue
+        if soc_type not in required_types or required_types[soc_type] is not None:
+            continue
+
+        user_id = _extract_field(user, "id")
+        if user_id is None:
+            continue
+        required_types[soc_type] = user_id
+
+    missing = [soc_type.value for soc_type, member_id in required_types.items() if member_id is None]
+    if missing:
+        return {"ok": False, "missing": missing}
+
+    members = [member_id for member_id in required_types.values() if member_id is not None]
+    return {"ok": True, "members": members}

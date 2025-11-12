@@ -22,6 +22,8 @@ from quadral_cluster.schemas import (
     ClusterCreate,
     ClusterRead,
     CompatibilityBreakdownRead,
+    QuadraMatchRequest,
+    QuadraMatchResponse,
     ProfileRead,
     ProfileUpdate,
     Recommendation,
@@ -30,7 +32,7 @@ from quadral_cluster.schemas import (
     UserCreate,
     UserRead,
 )
-from quadral_cluster.services.matchmaking import evaluate_candidate
+from quadral_cluster.services.matchmaking import build_quadra_cluster, evaluate_candidate
 
 if TYPE_CHECKING:  # pragma: no cover - type checking helper
     from quadral_cluster.services.matchmaking import CompatibilityBreakdown
@@ -71,8 +73,16 @@ def _matches_candidate_age(memberships: Iterable[ClusterMembership], candidate_a
 
 @router.post("/users", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 def create_user(payload: UserCreate, session: Session = Depends(get_session)) -> UserRead:
-    user = User(telegram_id=payload.telegram_id, username=payload.username, email=payload.email)
-    profile = Profile(**payload.profile.model_dump())
+    user = User(
+        telegram_id=payload.telegram_id,
+        username=payload.username,
+        email=payload.email,
+        socionics_type=payload.socionics_type.value,
+        quadra=payload.quadra.value if payload.quadra else None,
+    )
+    profile_data = payload.profile.model_dump()
+    profile_data.setdefault("socionics_type", payload.socionics_type.value)
+    profile = Profile(**profile_data)
     user.profile = profile
     session.add(user)
     session.flush()
@@ -199,6 +209,30 @@ def search_clusters(
         clusters = [cluster for cluster in clusters if _matches_candidate_age(cluster.memberships, candidate_age)]
 
     return [ClusterRead.model_validate(cluster) for cluster in clusters[:limit]]
+
+
+@router.post("/matchmaking/quadra", response_model=QuadraMatchResponse)
+def build_strict_quadra_cluster(
+    payload: QuadraMatchRequest, session: Session = Depends(get_session)
+) -> QuadraMatchResponse:
+    query = (
+        session.query(User)
+        .options(selectinload(User.profile))
+        .order_by(User.created_at.desc())
+        .limit(payload.limit)
+    )
+    users = query.all()
+    pool = []
+    for user in users:
+        socionics_type = user.socionics_type
+        if socionics_type is None and user.profile is not None:
+            socionics_type = user.profile.socionics_type
+        if socionics_type is None:
+            continue
+        pool.append({"id": user.id, "socionics_type": socionics_type})
+
+    result = build_quadra_cluster(pool, payload.quadra)
+    return QuadraMatchResponse(quadra=payload.quadra, **result)
 
 
 @router.get("/clusters/{cluster_id}", response_model=ClusterRead)

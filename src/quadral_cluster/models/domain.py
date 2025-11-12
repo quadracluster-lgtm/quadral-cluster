@@ -33,6 +33,8 @@ class User(Base, TimestampMixin):
     telegram_id: Mapped[Optional[int]] = mapped_column(Integer, unique=True)
     username: Mapped[Optional[str]] = mapped_column(String(64), unique=True)
     email: Mapped[Optional[str]] = mapped_column(String(255), unique=True)
+    socionics_type: Mapped[str] = mapped_column(String(8), nullable=False)
+    quadra: Mapped[Optional[str]] = mapped_column(String(16))
 
     profile: Mapped["Profile"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
     memberships: Mapped[List["ClusterMembership"]] = relationship(back_populates="user", cascade="all, delete-orphan")
