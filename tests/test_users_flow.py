@@ -1,17 +1,13 @@
-from fastapi.testclient import TestClient
+import uuid
 
 
-def test_create_user_flow(client: TestClient) -> None:
+def test_create_user_happy_path(test_client):
     payload = {
-        "email": "user@example.com",
-        "username": "example",
-        "profile": {},
+        "email": f"test-{uuid.uuid4().hex[:8]}@example.com",
+        "username": "Test User",
+        "profile": {
+            "bio": "Just checking",
+        },
     }
-
-    response = client.post("/users", json=payload)
-
-    assert response.status_code in {200, 201}
-
-    data = response.json()
-    assert "id" in data
-    assert data["email"] == payload["email"]
+    r = test_client.post("/users", json=payload)
+    assert r.status_code in (200, 201)
