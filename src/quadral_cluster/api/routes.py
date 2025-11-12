@@ -41,6 +41,13 @@ if TYPE_CHECKING:  # pragma: no cover - type checking helper
 router = APIRouter()
 
 
+def _enum_value_or_str(x):
+    if x is None:
+        return None
+    val = getattr(x, "value", x)
+    return str(val)
+
+
 def _ensure_user(session: Session, user_id: int) -> User:
     user = session.get(User, user_id)
     if user is None:
@@ -77,11 +84,11 @@ def create_user(payload: UserCreate, session: Session = Depends(get_session)) ->
         telegram_id=payload.telegram_id,
         username=payload.username,
         email=payload.email,
-        socionics_type=payload.socionics_type.value,
-        quadra=payload.quadra.value if payload.quadra else None,
+        socionics_type=_enum_value_or_str(payload.socionics_type),
+        quadra=_enum_value_or_str(payload.quadra),
     )
     profile_data = payload.profile.model_dump()
-    profile_data.setdefault("socionics_type", payload.socionics_type.value)
+    profile_data.setdefault("socionics_type", _enum_value_or_str(payload.socionics_type))
     profile = Profile(**profile_data)
     user.profile = profile
     session.add(user)
