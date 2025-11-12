@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from quadral_cluster.database import Base
+
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class MatchingCluster(Base):
@@ -50,7 +55,7 @@ class MatchingClusterMember(Base):
         "quadral_cluster.models.cluster.MatchingCluster",
         back_populates="members",
     )
-    user: Mapped["User"] = relationship(back_populates="matching_membership")
+    user: Mapped["User"] = relationship("User", back_populates="matching_membership")
 
 
 Cluster = MatchingCluster

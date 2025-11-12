@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from quadral_cluster.database import Base
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class Preference(Base):
@@ -23,10 +27,10 @@ class Preference(Base):
     )
 
     from_user: Mapped["User"] = relationship(
-        back_populates="preferences_from", foreign_keys=[from_user_id]
+        "User", foreign_keys=[from_user_id], back_populates="preferences_from"
     )
     to_user: Mapped["User"] = relationship(
-        back_populates="preferences_to", foreign_keys=[to_user_id]
+        "User", foreign_keys=[to_user_id], back_populates="preferences_to"
     )
 
 
