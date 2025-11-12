@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from .models.domain import ApplicationStatusEnum
+from quadral_cluster.domain.socionics import QUADRA_MEMBERS, Quadra, SocType
+from quadral_cluster.models.domain import ApplicationStatusEnum
 
 
 class BaseSchema(BaseModel):
@@ -39,11 +40,35 @@ class ProfileRead(ProfileCreate, TimestampSchema):
 
 # ---------- Пользователь ----------
 
+def _ensure_quadra(socionics_type: SocType, quadra: Quadra | None) -> Quadra | None:
+    if quadra is not None:
+        if socionics_type not in QUADRA_MEMBERS[quadra]:
+            msg = (
+                "Socionics type must belong to the specified quadra: "
+                f"{socionics_type} ∉ {quadra.value}"
+            )
+            raise ValueError(msg)
+        return quadra
+
+    for candidate, members in QUADRA_MEMBERS.items():
+        if socionics_type in members:
+            return candidate
+    return None
+
+
 class UserCreate(BaseSchema):
     telegram_id: Optional[int] = None
     username: Optional[str] = Field(default=None, max_length=64)
     email: Optional[str] = Field(default=None, max_length=255)
     profile: ProfileCreate
+    socionics_type: SocType
+    quadra: Quadra | None = None
+
+    @model_validator(mode="after")
+    def _populate_quadra(self) -> "UserCreate":
+        resolved = _ensure_quadra(self.socionics_type, self.quadra)
+        object.__setattr__(self, "quadra", resolved)
+        return self
 
 
 class ProfileUpdate(BaseSchema):
@@ -64,6 +89,27 @@ class UserRead(TimestampSchema):
     username: Optional[str]
     email: Optional[str]
     profile: Optional[ProfileRead]
+    socionics_type: SocType
+    quadra: Quadra | None = None
+
+    @model_validator(mode="after")
+    def _populate_quadra(self) -> "UserRead":
+        resolved = _ensure_quadra(self.socionics_type, self.quadra)
+        object.__setattr__(self, "quadra", resolved)
+        return self
+
+
+class UserPublic(BaseSchema):
+    id: int
+    username: Optional[str] = None
+    socionics_type: SocType
+    quadra: Quadra | None = None
+
+    @model_validator(mode="after")
+    def _populate_quadra(self) -> "UserPublic":
+        resolved = _ensure_quadra(self.socionics_type, self.quadra)
+        object.__setattr__(self, "quadra", resolved)
+        return self
 
 
 # ---------- Кластер ----------
@@ -149,3 +195,15 @@ class TestResultRead(TimestampSchema):
     socionics_type: Optional[str]
     psychotype: Optional[str]
     confidence: Optional[float]
+
+
+class QuadraMatchRequest(BaseSchema):
+    quadra: Quadra
+    limit: int = Field(default=100, ge=4, le=500)
+
+
+class QuadraMatchResponse(BaseSchema):
+    quadra: Quadra
+    ok: bool
+    members: List[int] | None = None
+    missing: List[str] | None = None
