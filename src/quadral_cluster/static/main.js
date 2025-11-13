@@ -1,3 +1,4 @@
+// Сохранить текущего пользователя в localStorage
 function saveCurrentUser(user) {
   const payload = {
     user_id: user.id,
@@ -7,24 +8,30 @@ function saveCurrentUser(user) {
   localStorage.setItem("qc_user", JSON.stringify(payload));
 }
 
+// Прочитать пользователя из localStorage
 function loadCurrentUser() {
   const raw = localStorage.getItem("qc_user");
   if (!raw) return null;
   try {
     return JSON.parse(raw);
-  } catch {
+  } catch (e) {
+    console.warn("Failed to parse qc_user from localStorage", e);
     return null;
   }
 }
 
+// Вывести текст в контейнер по id
 function renderMessage(containerId, text) {
   const el = document.getElementById(containerId);
   if (!el) return;
   el.textContent = text;
 }
 
+// ---------- 1. СОЗДАНИЕ ПРОФИЛЯ ----------
+
 async function handleProfileSubmit(event) {
   event.preventDefault();
+
   const form = event.target;
   const email = form.email.value.trim();
   const username = form.username.value.trim();
@@ -46,20 +53,28 @@ async function handleProfileSubmit(event) {
     });
 
     const data = await resp.json();
+
     if (!resp.ok) {
-      renderMessage("signup-result", `Ошибка: ${resp.status} ${JSON.stringify(data)}`);
+      renderMessage(
+        "signup-result",
+        `Ошибка: ${resp.status} ${JSON.stringify(data)}`
+      );
       return;
     }
 
+    // Сохраняем пользователя локально для дальнейших запросов
     saveCurrentUser(data);
+
     renderMessage(
       "signup-result",
-      `Профиль создан. ID: ${data.id}, TIM: ${data.socionics_type}, квадра: ${data.quadra}.`,
+      `Профиль создан. ID: ${data.id}, TIM: ${data.socionics_type}, квадра: ${data.quadra}.`
     );
   } catch (err) {
     renderMessage("signup-result", `Сетевая ошибка: ${err}`);
   }
 }
+
+// ---------- 2A. ВСТУПИТЬ В СУЩЕСТВУЮЩИЙ КЛАСТЕР ----------
 
 async function fetchOpenClusters() {
   const user = loadCurrentUser();
@@ -74,12 +89,13 @@ async function fetchOpenClusters() {
   }
 
   const url = `/clusters/open?quadra=${encodeURIComponent(
-    user.quadra,
+    user.quadra
   )}&tim=${encodeURIComponent(user.socionics_type)}&limit=10`;
 
   try {
     const resp = await fetch(url);
     const data = await resp.json();
+
     if (!resp.ok) {
       container.textContent = `Ошибка: ${resp.status} ${JSON.stringify(data)}`;
       return;
@@ -130,16 +146,22 @@ async function joinCluster(clusterId) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cluster_id: clusterId, user_id: user.user_id }),
     });
+
     const data = await resp.json();
     if (!resp.ok) {
-      container.textContent = `Не удалось вступить: ${resp.status} ${JSON.stringify(data)}`;
+      container.textContent = `Не удалось вступить: ${resp.status} ${JSON.stringify(
+        data
+      )}`;
       return;
     }
+
     container.textContent = `Вы присоединились к кластеру #${clusterId}.`;
   } catch (err) {
     container.textContent = `Сетевая ошибка: ${err}`;
   }
 }
+
+// ---------- 2Б. СОБРАТЬ НОВЫЙ КЛАСТЕР ----------
 
 async function buildCluster() {
   const user = loadCurrentUser();
@@ -154,11 +176,12 @@ async function buildCluster() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.user_id, quadra: user.quadra }),
     });
+
     const data = await resp.json();
     if (!resp.ok) {
       renderMessage(
         "build-cluster-result",
-        `Ошибка: ${resp.status} ${JSON.stringify(data)}`,
+        `Ошибка: ${resp.status} ${JSON.stringify(data)}`
       );
       return;
     }
@@ -166,7 +189,7 @@ async function buildCluster() {
     if (data.ok === false && Array.isArray(data.missing)) {
       renderMessage(
         "build-cluster-result",
-        `Не хватает TIM: ${data.missing.join(", ")}`,
+        `Не хватает TIM: ${data.missing.join(", ")}`
       );
       return;
     }
@@ -177,7 +200,7 @@ async function buildCluster() {
         .join(", ");
       renderMessage(
         "build-cluster-result",
-        `Собран кластер #${data.cluster.id}: ${members}`,
+        `Собран кластер #${data.cluster.id}: ${members}`
       );
       return;
     }
@@ -187,6 +210,8 @@ async function buildCluster() {
     renderMessage("build-cluster-result", `Сетевая ошибка: ${err}`);
   }
 }
+
+// ---------- ИНИЦИАЛИЗАЦИЯ ----------
 
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("profile-form");
