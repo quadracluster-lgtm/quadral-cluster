@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Квадральный кластер</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header>
+        <h1>Квадральный кластер</h1>
+        <p>
+          Квадральный кластер помогает соционическим тимам находить друг друга и
+          объединяться в гармоничные рабочие группы. Сервис анализирует ТИМы,
+          подбирает участников по квадрам и ведёт учёт активных кластеров.
+        </p>
+        <p>
+          Создайте профиль, выберите один из путей и платформа либо найдёт для вас
+          подходящий кластер, либо соберёт новый.
+        </p>
+      </header>
+
+      <section class="card" id="create-profile">
+        <h2>Создать профиль</h2>
+        <form id="signup-form">
+          <label>
+            Email
+            <input type="email" name="email" required />
+          </label>
+          <label>
+            Имя пользователя
+            <input type="text" name="username" required />
+          </label>
+          <label>
+            TIM
+            <select name="tim" required>
+              <option value="IEE">IEE</option>
+              <option value="EII">EII</option>
+              <option value="LSE">LSE</option>
+              <option value="SLI">SLI</option>
+              <option value="ILE">ILE</option>
+              <option value="SEI">SEI</option>
+              <option value="ESE">ESE</option>
+              <option value="LII">LII</option>
+              <option value="SLE">SLE</option>
+              <option value="IEI">IEI</option>
+              <option value="EIE">EIE</option>
+              <option value="LSI">LSI</option>
+              <option value="SEE">SEE</option>
+              <option value="ESI">ESI</option>
+              <option value="LIE">LIE</option>
+              <option value="ILI">ILI</option>
+            </select>
+          </label>
+          <label>
+            Bio (опционально)
+            <textarea name="bio" rows="4" placeholder="Пару слов о себе"></textarea>
+          </label>
+          <button type="submit">Создать профиль</button>
+        </form>
+        <p class="hint">Квадра будет определена автоматически по ТИМу.</p>
+        <div id="signup-result" class="result"></div>
+      </section>
+
+      <section class="card" id="join-cluster">
+        <h2>Вступить в существующий кластер (Путь A)</h2>
+        <button id="btn-find-open-clusters">Найти кластеры для меня</button>
+        <div id="open-clusters" class="clusters"></div>
+      </section>
+
+      <section class="card" id="build-cluster">
+        <h2>Собрать новый кластер (Путь B)</h2>
+        <button id="btn-build-cluster">Собрать новый кластер</button>
+        <div id="build-cluster-result" class="result"></div>
+      </section>
+    </div>
+    <script src="/static/main.js"></script>
+  </body>
+</html>
