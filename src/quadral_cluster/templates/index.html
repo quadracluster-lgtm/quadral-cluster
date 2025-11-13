@@ -5,32 +5,33 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Квадральный кластер</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/main.js" defer></script>
   </head>
   <body>
-    <div class="page">
-      <header>
+    <div class="page-container">
+      <header class="card">
         <h1>Квадральный кластер</h1>
         <p>
           Квадральный кластер помогает соционическим тимам находить друг друга и
           объединяться в гармоничные рабочие группы. Сервис анализирует ТИМы,
-          подбирает участников по квадрам и ведёт учёт активных кластеров.
+          подбирает участников по квадрам и собирает сбалансированные кластеры.
         </p>
         <p>
-          Создайте профиль, выберите один из путей и платформа либо найдёт для вас
+          Создайте профиль, выберите путь, и платформа либо найдёт для вас
           подходящий кластер, либо соберёт новый.
         </p>
       </header>
 
-      <section class="card" id="create-profile">
-        <h2>Создать профиль</h2>
-        <form id="signup-form">
+      <section class="card" id="block-create-profile">
+        <h2>1. Создай свой профиль</h2>
+        <form id="profile-form">
           <label>
             Email
-            <input type="email" name="email" required />
+            <input type="email" name="email" placeholder="you@example.com" required />
           </label>
           <label>
-            Имя пользователя
-            <input type="text" name="username" required />
+            Имя / ник
+            <input type="text" name="username" placeholder="QuadraHero" required />
           </label>
           <label>
             TIM
@@ -54,27 +55,34 @@
             </select>
           </label>
           <label>
-            Bio (опционально)
-            <textarea name="bio" rows="4" placeholder="Пару слов о себе"></textarea>
+            Краткое био
+            <textarea name="bio" rows="3" placeholder="Расскажи о себе"></textarea>
           </label>
           <button type="submit">Создать профиль</button>
         </form>
-        <p class="hint">Квадра будет определена автоматически по ТИМу.</p>
-        <div id="signup-result" class="result"></div>
+        <small>Квадра будет определена автоматически по TIM.</small>
+        <div id="signup-result" class="message"></div>
       </section>
 
-      <section class="card" id="join-cluster">
-        <h2>Вступить в существующий кластер (Путь A)</h2>
+      <section class="card" id="block-join-cluster">
+        <h2>2А. Вступить в существующий кластер</h2>
+        <p>
+          Система найдёт частично собранные кластеры с подходящей квадрой и
+          свободным TIM.
+        </p>
         <button id="btn-find-open-clusters">Найти кластеры для меня</button>
-        <div id="open-clusters" class="clusters"></div>
+        <div id="open-clusters" class="clusters-grid"></div>
       </section>
 
-      <section class="card" id="build-cluster">
-        <h2>Собрать новый кластер (Путь B)</h2>
-        <button id="btn-build-cluster">Собрать новый кластер</button>
-        <div id="build-cluster-result" class="result"></div>
+      <section class="card" id="block-build-cluster">
+        <h2>2Б. Собрать новый кластер</h2>
+        <p>
+          Сервис попробует собрать полный кластер из четырёх TIM внутри одной
+          квадры. Если кого-то не хватит — подскажет, кого пригласить.
+        </p>
+        <button id="btn-build-cluster">Собрать кластер</button>
+        <div id="build-cluster-result" class="message"></div>
       </section>
     </div>
-    <script src="/static/main.js"></script>
   </body>
 </html>

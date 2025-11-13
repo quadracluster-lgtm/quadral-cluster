@@ -1,202 +1,231 @@
-const storageKey = "qc_user";
-
-function saveUser(user) {
-  localStorage.setItem(storageKey, JSON.stringify(user));
+// Сохранить текущего пользователя в localStorage
+function saveCurrentUser(user) {
+  const payload = {
+    user_id: user.id,
+    socionics_type: user.socionics_type,
+    quadra: user.quadra,
+  };
+  localStorage.setItem("qc_user", JSON.stringify(payload));
 }
 
-function getUser() {
-  const raw = localStorage.getItem(storageKey);
-  return raw ? JSON.parse(raw) : null;
+// Прочитать пользователя из localStorage
+function loadCurrentUser() {
+  const raw = localStorage.getItem("qc_user");
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn("Failed to parse qc_user from localStorage", e);
+    return null;
+  }
 }
 
-function renderSignupSuccess(container, data) {
-  container.textContent = `Профиль создан: ID ${data.user_id}, TIM ${data.socionics_type}, квадра ${data.quadra}`;
+// Вывести текст в контейнер по id
+function renderMessage(containerId, text) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.textContent = text;
 }
 
-function renderError(container, message) {
-  container.textContent = message;
-}
+// ---------- 1. СОЗДАНИЕ ПРОФИЛЯ ----------
 
-async function handleSignupSubmit(event) {
+async function handleProfileSubmit(event) {
   event.preventDefault();
-  const form = event.currentTarget;
-  const resultContainer = document.getElementById("signup-result");
-  resultContainer.textContent = "Отправляем данные...";
+
+  const form = event.target;
+  const email = form.email.value.trim();
+  const username = form.username.value.trim();
+  const tim = form.tim.value;
+  const bio = form.bio.value.trim();
 
   const payload = {
-    email: form.email.value.trim(),
-    username: form.username.value.trim(),
-    socionics_type: form.tim.value,
-    profile: {
-      bio: form.bio.value.trim() || null,
-    },
+    email,
+    username,
+    socionics_type: tim,
+    profile: bio ? { bio } : {},
   };
 
   try {
-    const response = await fetch("/users", {
+    const resp = await fetch("/users", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || "Не удалось создать профиль");
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      renderMessage(
+        "signup-result",
+        `Ошибка: ${resp.status} ${JSON.stringify(data)}`
+      );
+      return;
     }
 
-    renderSignupSuccess(resultContainer, data);
-    saveUser({
-      user_id: data.user_id,
-      socionics_type: data.socionics_type,
-      quadra: data.quadra,
-    });
-  } catch (error) {
-    renderError(resultContainer, error.message || "Ошибка соединения");
+    // Сохраняем пользователя локально для дальнейших запросов
+    saveCurrentUser(data);
+
+    renderMessage(
+      "signup-result",
+      `Профиль создан. ID: ${data.id}, TIM: ${data.socionics_type}, квадра: ${data.quadra}.`
+    );
+  } catch (err) {
+    renderMessage("signup-result", `Сетевая ошибка: ${err}`);
   }
 }
 
-function createClusterCard(cluster) {
-  const card = document.createElement("div");
-  card.className = "cluster-card";
+// ---------- 2A. ВСТУПИТЬ В СУЩЕСТВУЮЩИЙ КЛАСТЕР ----------
 
-  const title = document.createElement("h3");
-  title.textContent = `Кластер #${cluster.cluster_id} — квадра ${cluster.quadra}`;
-  card.appendChild(title);
+async function fetchOpenClusters() {
+  const user = loadCurrentUser();
+  const container = document.getElementById("open-clusters");
+  if (!container) return;
 
-  if (cluster.members?.length) {
-    const list = document.createElement("ul");
-    list.className = "cluster-members";
-    cluster.members.forEach((member) => {
-      const li = document.createElement("li");
-      const tim = member.socionics_type || member.tim || "?";
-      const username = member.username || member.user_id || "Участник";
-      li.textContent = `${username} (${tim})`;
-      list.appendChild(li);
-    });
-    card.appendChild(list);
-  }
-
-  const button = document.createElement("button");
-  button.textContent = "Вступить";
-  button.dataset.clusterId = cluster.cluster_id;
-  button.addEventListener("click", () => handleJoinCluster(cluster.cluster_id));
-  card.appendChild(button);
-
-  return card;
-}
-
-async function loadOpenClusters() {
-  const resultContainer = document.getElementById("open-clusters");
-  const user = getUser();
+  container.innerHTML = "";
 
   if (!user) {
-    renderError(resultContainer, "Сначала создайте профиль");
+    container.textContent = "Сначала создайте профиль.";
     return;
   }
 
-  resultContainer.textContent = "Загружаем доступные кластеры...";
-  const params = new URLSearchParams({
-    quadra: user.quadra,
-    tim: user.socionics_type,
-    limit: "10",
-  });
+  const url = `/clusters/open?quadra=${encodeURIComponent(
+    user.quadra
+  )}&tim=${encodeURIComponent(user.socionics_type)}&limit=10`;
 
   try {
-    const response = await fetch(`/clusters/open?${params.toString()}`);
-    const data = await response.json().catch(() => []);
-    if (!response.ok) {
-      throw new Error(data.detail || "Не удалось получить кластеры");
+    const resp = await fetch(url);
+    const data = await resp.json();
+
+    if (!resp.ok) {
+      container.textContent = `Ошибка: ${resp.status} ${JSON.stringify(data)}`;
+      return;
     }
 
-    resultContainer.textContent = "";
-    if (!data.length) {
-      const empty = document.createElement("p");
-      empty.className = "empty-state";
-      empty.textContent = "Нет доступных кластеров. Попробуйте собрать новый.";
-      resultContainer.appendChild(empty);
+    if (!Array.isArray(data) || data.length === 0) {
+      container.textContent = "Подходящих кластеров пока нет.";
       return;
     }
 
     data.forEach((cluster) => {
-      resultContainer.appendChild(createClusterCard(cluster));
+      const card = document.createElement("div");
+      card.className = "cluster-card";
+
+      const title = document.createElement("h3");
+      title.textContent = `Кластер #${cluster.id} (${cluster.quadra})`;
+      card.appendChild(title);
+
+      if (cluster.members && cluster.members.length) {
+        const members = document.createElement("div");
+        members.className = "cluster-members";
+        members.textContent = cluster.members
+          .map((m) => `${m.user_id} (${m.socionics_type})`)
+          .join(", ");
+        card.appendChild(members);
+      }
+
+      const btn = document.createElement("button");
+      btn.textContent = "Вступить";
+      btn.addEventListener("click", () => joinCluster(cluster.id));
+      card.appendChild(btn);
+
+      container.appendChild(card);
     });
-  } catch (error) {
-    renderError(resultContainer, error.message || "Ошибка соединения");
+  } catch (err) {
+    container.textContent = `Сетевая ошибка: ${err}`;
   }
 }
 
-async function handleJoinCluster(clusterId) {
-  const resultContainer = document.getElementById("open-clusters");
-  const user = getUser();
-  if (!user) {
-    renderError(resultContainer, "Сначала создайте профиль");
-    return;
-  }
+async function joinCluster(clusterId) {
+  const user = loadCurrentUser();
+  const container = document.getElementById("open-clusters");
+  if (!user || !container) return;
 
   try {
-    const response = await fetch("/clusters/join", {
+    const resp = await fetch("/clusters/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cluster_id: clusterId, user_id: user.user_id }),
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || "Не удалось вступить в кластер");
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      container.textContent = `Не удалось вступить: ${resp.status} ${JSON.stringify(
+        data
+      )}`;
+      return;
     }
 
-    renderError(resultContainer, `Вы присоединились к кластеру #${clusterId}`);
-    await loadOpenClusters();
-  } catch (error) {
-    renderError(resultContainer, error.message || "Ошибка соединения");
+    container.textContent = `Вы присоединились к кластеру #${clusterId}.`;
+  } catch (err) {
+    container.textContent = `Сетевая ошибка: ${err}`;
   }
 }
 
-async function handleBuildCluster() {
-  const resultContainer = document.getElementById("build-cluster-result");
-  const user = getUser();
+// ---------- 2Б. СОБРАТЬ НОВЫЙ КЛАСТЕР ----------
+
+async function buildCluster() {
+  const user = loadCurrentUser();
   if (!user) {
-    renderError(resultContainer, "Сначала создайте профиль");
+    renderMessage("build-cluster-result", "Сначала создайте профиль.");
     return;
   }
 
-  resultContainer.textContent = "Пробуем собрать кластер...";
   try {
-    const response = await fetch("/clusters/find_or_create", {
+    const resp = await fetch("/clusters/find_or_create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_id: user.user_id, quadra: user.quadra }),
     });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.detail || "Не удалось собрать кластер");
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      renderMessage(
+        "build-cluster-result",
+        `Ошибка: ${resp.status} ${JSON.stringify(data)}`
+      );
+      return;
     }
 
-    if (data.ok) {
-      const membersList = (data.members || [])
-        .map((member) => `${member.username || member.user_id} (${member.socionics_type || member.tim})`)
-        .join(", ");
-      resultContainer.textContent = `Кластер #${data.cluster_id}: ${membersList}`;
-    } else if (Array.isArray(data.missing) && data.missing.length) {
-      resultContainer.textContent = `Не хватает TIM: ${data.missing.join(", ")}`;
-    } else {
-      resultContainer.textContent = "Кластер пока не собран";
+    if (data.ok === false && Array.isArray(data.missing)) {
+      renderMessage(
+        "build-cluster-result",
+        `Не хватает TIM: ${data.missing.join(", ")}`
+      );
+      return;
     }
-  } catch (error) {
-    renderError(resultContainer, error.message || "Ошибка соединения");
+
+    if (data.ok && data.cluster) {
+      const members = (data.cluster.members || [])
+        .map((m) => `${m.user_id} (${m.socionics_type})`)
+        .join(", ");
+      renderMessage(
+        "build-cluster-result",
+        `Собран кластер #${data.cluster.id}: ${members}`
+      );
+      return;
+    }
+
+    renderMessage("build-cluster-result", JSON.stringify(data));
+  } catch (err) {
+    renderMessage("build-cluster-result", `Сетевая ошибка: ${err}`);
   }
 }
 
-function init() {
-  const signupForm = document.getElementById("signup-form");
-  signupForm?.addEventListener("submit", handleSignupSubmit);
+// ---------- ИНИЦИАЛИЗАЦИЯ ----------
 
-  document
-    .getElementById("btn-find-open-clusters")
-    ?.addEventListener("click", loadOpenClusters);
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("profile-form");
+  if (form) {
+    form.addEventListener("submit", handleProfileSubmit);
+  }
 
-  document
-    .getElementById("btn-build-cluster")
-    ?.addEventListener("click", handleBuildCluster);
-}
+  const btnOpen = document.getElementById("btn-find-open-clusters");
+  if (btnOpen) {
+    btnOpen.addEventListener("click", fetchOpenClusters);
+  }
 
-window.addEventListener("DOMContentLoaded", init);
+  const btnBuild = document.getElementById("btn-build-cluster");
+  if (btnBuild) {
+    btnBuild.addEventListener("click", buildCluster);
+  }
+});
