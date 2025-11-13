@@ -12,8 +12,13 @@
       <header class="card">
         <h1>Квадральный кластер</h1>
         <p>
-          Сервис для быстрого матчинга четырёх психотипов одной квадры. Подбираем
-          людей на основе соционики и собираем сбалансированные кластеры.
+          Квадральный кластер помогает соционическим тимам находить друг друга и
+          объединяться в гармоничные рабочие группы. Сервис анализирует ТИМы,
+          подбирает участников по квадрам и собирает сбалансированные кластеры.
+        </p>
+        <p>
+          Создайте профиль, выберите путь, и платформа либо найдёт для вас
+          подходящий кластер, либо соберёт новый.
         </p>
       </header>
 
@@ -22,15 +27,15 @@
         <form id="profile-form">
           <label>
             Email
-            <input type="email" name="email" placeholder="you@example.com" />
+            <input type="email" name="email" placeholder="you@example.com" required />
           </label>
           <label>
             Имя / ник
-            <input type="text" name="username" placeholder="QuadraHero" />
+            <input type="text" name="username" placeholder="QuadraHero" required />
           </label>
           <label>
             TIM
-            <select name="tim">
+            <select name="tim" required>
               <option value="IEE">IEE</option>
               <option value="EII">EII</option>
               <option value="LSE">LSE</option>
