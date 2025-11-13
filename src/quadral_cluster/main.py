@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from pathlib import Path
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
 from .api.routes import router
 from .api.routes_matching import router as matching_router
@@ -23,6 +27,15 @@ app.add_middleware(
 app.include_router(router)
 app.include_router(matching_router)
 
+BASE_DIR = Path(__file__).resolve().parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+app.mount(
+    "/static",
+    StaticFiles(directory=str(BASE_DIR / "static")),
+    name="static",
+)
+
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -37,6 +50,6 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/", tags=["health"])
-def root() -> dict[str, str]:
-    return {"status": "ok", "docs": "/docs", "openapi": "/openapi.json"}
+@app.get("/", include_in_schema=False)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})

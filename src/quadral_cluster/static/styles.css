@@ -1,0 +1,116 @@
+:root {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: #f4f5fb;
+  color: #101828;
+}
+
+.page-container {
+  max-width: 960px;
+  margin: 32px auto;
+  padding: 0 16px 40px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding: 24px 24px 20px 24px;
+  margin-bottom: 24px;
+}
+
+h1,
+h2 {
+  margin-top: 0;
+}
+
+form label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d0d5dd;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+button:hover {
+  background: #2563eb;
+}
+
+small {
+  color: #6b7280;
+  display: block;
+  margin-top: 8px;
+}
+
+.message {
+  margin-top: 16px;
+  font-size: 14px;
+}
+
+.msg-info {
+  color: #1d4ed8;
+}
+
+.msg-error {
+  color: #b91c1c;
+}
+
+.msg-success {
+  color: #15803d;
+}
+
+.clusters-grid {
+  margin-top: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.cluster-card {
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.cluster-card h3 {
+  margin: 0 0 8px;
+}
+
+.cluster-members {
+  margin: 0 0 12px;
+  padding-left: 20px;
+}
+
+.cluster-members li {
+  margin-bottom: 4px;
+}

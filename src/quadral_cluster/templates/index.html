@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Квадральный кластер</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+    <script src="/static/main.js" defer></script>
+  </head>
+  <body>
+    <div class="page-container">
+      <header class="card">
+        <h1>Квадральный кластер</h1>
+        <p>
+          Сервис для быстрого матчинга четырёх психотипов одной квадры. Подбираем
+          людей на основе соционики и собираем сбалансированные кластеры.
+        </p>
+      </header>
+
+      <section class="card" id="block-create-profile">
+        <h2>1. Создай свой профиль</h2>
+        <form id="profile-form">
+          <label>
+            Email
+            <input type="email" name="email" placeholder="you@example.com" />
+          </label>
+          <label>
+            Имя / ник
+            <input type="text" name="username" placeholder="QuadraHero" />
+          </label>
+          <label>
+            TIM
+            <select name="tim">
+              <option value="IEE">IEE</option>
+              <option value="EII">EII</option>
+              <option value="LSE">LSE</option>
+              <option value="SLI">SLI</option>
+              <option value="ILE">ILE</option>
+              <option value="SEI">SEI</option>
+              <option value="ESE">ESE</option>
+              <option value="LII">LII</option>
+              <option value="SLE">SLE</option>
+              <option value="IEI">IEI</option>
+              <option value="EIE">EIE</option>
+              <option value="LSI">LSI</option>
+              <option value="SEE">SEE</option>
+              <option value="ESI">ESI</option>
+              <option value="LIE">LIE</option>
+              <option value="ILI">ILI</option>
+            </select>
+          </label>
+          <label>
+            Краткое био
+            <textarea name="bio" rows="3" placeholder="Расскажи о себе"></textarea>
+          </label>
+          <button type="submit">Создать профиль</button>
+        </form>
+        <small>Квадра будет определена автоматически по TIM.</small>
+        <div id="signup-result" class="message"></div>
+      </section>
+
+      <section class="card" id="block-join-cluster">
+        <h2>2А. Вступить в существующий кластер</h2>
+        <p>
+          Система найдёт частично собранные кластеры с подходящей квадрой и
+          свободным TIM.
+        </p>
+        <button id="btn-find-open-clusters">Найти кластеры для меня</button>
+        <div id="open-clusters" class="clusters-grid"></div>
+      </section>
+
+      <section class="card" id="block-build-cluster">
+        <h2>2Б. Собрать новый кластер</h2>
+        <p>
+          Сервис попробует собрать полный кластер из четырёх TIM внутри одной
+          квадры. Если кого-то не хватит — подскажет, кого пригласить.
+        </p>
+        <button id="btn-build-cluster">Собрать кластер</button>
+        <div id="build-cluster-result" class="message"></div>
+      </section>
+    </div>
+  </body>
+</html>
