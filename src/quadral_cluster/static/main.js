@@ -1,3 +1,4 @@
+// Сохранить текущего пользователя в localStorage
 function saveCurrentUser(user) {
   const payload = {
     user_id: user.id,
@@ -7,16 +8,19 @@ function saveCurrentUser(user) {
   localStorage.setItem("qc_user", JSON.stringify(payload));
 }
 
+// Прочитать пользователя из localStorage
 function loadCurrentUser() {
   const raw = localStorage.getItem("qc_user");
   if (!raw) return null;
   try {
     return JSON.parse(raw);
-  } catch {
+  } catch (e) {
+    console.warn("Failed to parse qc_user from localStorage", e);
     return null;
   }
 }
 
+// Вывести текст в контейнер по id
 function renderMessage(containerId, text) {
   const el = document.getElementById(containerId);
   if (!el) return;
@@ -28,6 +32,7 @@ function getIntentType() {
   return select ? select.value : "family";
 }
 
+// ---------- 1. СОЗДАНИЕ ПРОФИЛЯ ----------
 async function handleProfileSubmit(event) {
   event.preventDefault();
   const form = event.target;
@@ -66,6 +71,7 @@ async function handleProfileSubmit(event) {
   }
 }
 
+// ---------- 2А. ВСТУПИТЬ В СУЩЕСТВУЮЩИЙ КЛАСТЕР ----------
 async function fetchOpenClusters() {
   const user = loadCurrentUser();
   const container = document.getElementById("open-clusters");
@@ -154,6 +160,7 @@ async function joinCluster(clusterId) {
   }
 }
 
+// ---------- 2Б. СОБРАТЬ НОВЫЙ КЛАСТЕР ----------
 async function buildCluster() {
   const user = loadCurrentUser();
   if (!user) {
@@ -205,6 +212,7 @@ async function buildCluster() {
   }
 }
 
+// ---------- ИНИЦИАЛИЗАЦИЯ ----------
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("profile-form");
   if (form) {
