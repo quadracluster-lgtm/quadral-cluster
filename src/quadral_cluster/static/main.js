@@ -27,6 +27,7 @@ function renderMessage(containerId, text) {
   el.textContent = text;
 }
 
+// Получить выбранный тип намерения (cluster_type)
 function getIntentType() {
   const select = document.getElementById("intent-type");
   return select ? select.value : "family";
@@ -35,6 +36,7 @@ function getIntentType() {
 // ---------- 1. СОЗДАНИЕ ПРОФИЛЯ ----------
 async function handleProfileSubmit(event) {
   event.preventDefault();
+
   const form = event.target;
   const email = form.email.value.trim();
   const username = form.username.value.trim();
@@ -56,15 +58,21 @@ async function handleProfileSubmit(event) {
     });
 
     const data = await resp.json();
+
     if (!resp.ok) {
-      renderMessage("signup-result", `Ошибка: ${resp.status} ${JSON.stringify(data)}`);
+      renderMessage(
+        "signup-result",
+        `Ошибка: ${resp.status} ${JSON.stringify(data)}`
+      );
       return;
     }
 
+    // Сохраняем пользователя локально для дальнейших запросов
     saveCurrentUser(data);
+
     renderMessage(
       "signup-result",
-      `Профиль создан. ID: ${data.id}, TIM: ${data.socionics_type}, квадра: ${data.quadra}.`,
+      `Профиль создан. ID: ${data.id}, TIM: ${data.socionics_type}, квадра: ${data.quadra}.`
     );
   } catch (err) {
     renderMessage("signup-result", `Сетевая ошибка: ${err}`);
@@ -84,15 +92,17 @@ async function fetchOpenClusters() {
     return;
   }
 
+  const clusterType = encodeURIComponent(getIntentType());
   const url = `/clusters/open?quadra=${encodeURIComponent(
-    user.quadra,
-  )}&tim=${encodeURIComponent(user.socionics_type)}&limit=10&cluster_type=${encodeURIComponent(
-    getIntentType(),
-  )}`;
+    user.quadra
+  )}&tim=${encodeURIComponent(
+    user.socionics_type
+  )}&limit=10&cluster_type=${clusterType}`;
 
   try {
     const resp = await fetch(url);
     const data = await resp.json();
+
     if (!resp.ok) {
       container.textContent = `Ошибка: ${resp.status} ${JSON.stringify(data)}`;
       return;
@@ -149,11 +159,15 @@ async function joinCluster(clusterId) {
         cluster_type: getIntentType(),
       }),
     });
+
     const data = await resp.json();
     if (!resp.ok) {
-      container.textContent = `Не удалось вступить: ${resp.status} ${JSON.stringify(data)}`;
+      container.textContent = `Не удалось вступить: ${resp.status} ${JSON.stringify(
+        data
+      )}`;
       return;
     }
+
     container.textContent = `Вы присоединились к кластеру #${clusterId}.`;
   } catch (err) {
     container.textContent = `Сетевая ошибка: ${err}`;
@@ -178,11 +192,12 @@ async function buildCluster() {
         cluster_type: getIntentType(),
       }),
     });
+
     const data = await resp.json();
     if (!resp.ok) {
       renderMessage(
         "build-cluster-result",
-        `Ошибка: ${resp.status} ${JSON.stringify(data)}`,
+        `Ошибка: ${resp.status} ${JSON.stringify(data)}`
       );
       return;
     }
@@ -190,7 +205,7 @@ async function buildCluster() {
     if (data.ok === false && Array.isArray(data.missing)) {
       renderMessage(
         "build-cluster-result",
-        `Не хватает TIM: ${data.missing.join(", ")}`,
+        `Не хватает TIM: ${data.missing.join(", ")}`
       );
       return;
     }
@@ -201,7 +216,7 @@ async function buildCluster() {
         .join(", ");
       renderMessage(
         "build-cluster-result",
-        `Собран кластер #${data.cluster.id}: ${members}`,
+        `Собран кластер #${data.cluster.id}: ${members}`
       );
       return;
     }
