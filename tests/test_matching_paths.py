@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy.orm import Session
 
 from quadral_cluster.domain.socionics import QUADRA_MEMBERS, Quadra, SocType
-from quadral_cluster.models.cluster import Cluster, ClusterMember
+from quadral_cluster.models.cluster import Cluster, ClusterMember, ClusterTypeEnum
 from quadral_cluster.services.matching import (
     find_or_create_cluster_for_user,
     list_open_clusters_for_tim,
@@ -29,7 +29,7 @@ def test_path_a_join_and_conflict(db_session: Session) -> None:
     first_candidate = make_user(db_session, SocType.SEI, quadra)
     second_candidate = make_user(db_session, SocType.SEI, quadra)
 
-    cluster = Cluster(quadra=quadra.value, status="locked")
+    cluster = Cluster(quadra=quadra.value, status="assembling", cluster_type=ClusterTypeEnum.FAMILY.value)
     db_session.add(cluster)
     db_session.flush()
     db_session.add(
@@ -41,13 +41,19 @@ def test_path_a_join_and_conflict(db_session: Session) -> None:
     )
     db_session.flush()
 
-    open_clusters = list_open_clusters_for_tim(quadra, SocType.SEI, session=db_session)
+    open_clusters = list_open_clusters_for_tim(
+        quadra, SocType.SEI, ClusterTypeEnum.FAMILY, session=db_session
+    )
     assert open_clusters and open_clusters[0].cluster.id == cluster.id
 
-    result_ok = try_join_cluster(first_candidate.id, cluster.id, session=db_session)
+    result_ok = try_join_cluster(
+        first_candidate.id, cluster.id, intent_type=ClusterTypeEnum.FAMILY, session=db_session
+    )
     assert result_ok == {"ok": True}
 
-    conflict = try_join_cluster(second_candidate.id, cluster.id, session=db_session)
+    conflict = try_join_cluster(
+        second_candidate.id, cluster.id, intent_type=ClusterTypeEnum.FAMILY, session=db_session
+    )
     assert conflict == {"ok": False, "reason": "slot_taken"}
 
 
@@ -59,21 +65,25 @@ def test_path_b_find_or_create_full_cluster(db_session: Session) -> None:
     }
 
     initiator = next(iter(users.values()))
-    result = find_or_create_cluster_for_user(initiator.id, quadra, session=db_session)
+    result = find_or_create_cluster_for_user(
+        initiator.id, quadra, cluster_type=ClusterTypeEnum.FAMILY, session=db_session
+    )
 
     assert result["ok"] is True
     assert len(result["members"]) == 4
 
     cluster = db_session.get(Cluster, result["cluster_id"])
     assert cluster is not None
-    assert cluster.status == "full"
+    assert cluster.status == "ready"
 
 
 def test_path_b_missing_members(db_session: Session) -> None:
     quadra = Quadra.DELTA
     initiator = make_user(db_session, SocType.IEE, quadra)
 
-    result = find_or_create_cluster_for_user(initiator.id, quadra, session=db_session)
+    result = find_or_create_cluster_for_user(
+        initiator.id, quadra, cluster_type=ClusterTypeEnum.FAMILY, session=db_session
+    )
     assert result["ok"] is False
     missing = set(result["missing"])
     expected_missing = {tim.value for tim in QUADRA_MEMBERS[quadra] if tim != SocType.IEE}

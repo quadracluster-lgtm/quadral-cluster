@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import List, Optional
 
+from enum import Enum
+
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from quadral_cluster.domain.socionics import QUADRA_MEMBERS, Quadra, SocType
@@ -207,3 +209,48 @@ class QuadraMatchResponse(BaseSchema):
     ok: bool
     members: List[int] | None = None
     missing: List[str] | None = None
+
+
+# ---------- Matching extensions ----------
+
+
+class ClusterType(str, Enum):
+    FAMILY = "family"
+    WORK = "work"
+
+
+class MatchRequestStatus(str, Enum):
+    PENDING = "pending"
+    MATCHED = "matched"
+    CANCELLED = "cancelled"
+
+
+class MatchRequestCreate(BaseSchema):
+    user_id: int
+    quadra: Quadra
+    intent_type: ClusterType = ClusterType.FAMILY
+    socionics_type: SocType
+
+
+class MatchRequestRead(TimestampSchema):
+    id: int
+    user_id: int
+    quadra: Quadra
+    intent_type: ClusterType
+    socionics_type: SocType
+    status: MatchRequestStatus
+    cluster_id: Optional[int] = None
+
+
+class MatchingClusterMemberRead(BaseSchema):
+    user_id: int
+    socionics_type: SocType
+    match_request_id: Optional[int] = None
+
+
+class MatchingClusterRead(BaseSchema):
+    id: int
+    quadra: Quadra
+    cluster_type: ClusterType
+    status: str
+    members: List[MatchingClusterMemberRead]

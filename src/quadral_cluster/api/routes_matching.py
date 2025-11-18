@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from quadral_cluster.database import get_session
 from quadral_cluster.domain.socionics import Quadra, SocType
 from quadral_cluster.models.availability import Availability
+from quadral_cluster.models.cluster import ClusterTypeEnum
 from quadral_cluster.models.preference import Preference
 from quadral_cluster.services.matching import (
     ClusterWithScore,
@@ -35,10 +36,18 @@ def _parse_tim(value: str) -> SocType:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
 
 
+def _parse_cluster_type(value: str | None) -> ClusterTypeEnum:
+    try:
+        return ClusterTypeEnum(value or ClusterTypeEnum.FAMILY.value)
+    except ValueError as exc:  # pragma: no cover
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+
 def _cluster_payload(cluster: ClusterWithScore) -> dict[str, Any]:
     return {
         "cluster_id": cluster.cluster.id,
         "quadra": cluster.cluster.quadra,
+        "cluster_type": cluster.cluster.cluster_type,
         "status": cluster.cluster.status,
         "score": cluster.score,
         "members": [
@@ -52,13 +61,15 @@ def _cluster_payload(cluster: ClusterWithScore) -> dict[str, Any]:
 def get_open_clusters(
     quadra: str = Query(...),
     tim: str = Query(...),
+    cluster_type: str | None = Query(None),
     limit: int = Query(10, ge=1, le=50),
     session: Session = Depends(get_session),
 ) -> list[dict[str, Any]]:
     quadra_enum = _parse_quadra(quadra)
     tim_enum = _parse_tim(tim)
+    cluster_type_enum = _parse_cluster_type(cluster_type)
     clusters = list_open_clusters_for_tim(
-        quadra_enum, tim_enum, limit=limit, session=session
+        quadra_enum, tim_enum, cluster_type_enum, limit=limit, session=session
     )
     return [_cluster_payload(cluster) for cluster in clusters]
 
@@ -72,7 +83,12 @@ def post_join_cluster(
     if cluster_id is None or user_id is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="cluster_id and user_id are required")
 
-    result = try_join_cluster(user_id=user_id, cluster_id=cluster_id, session=session)
+    intent_value = payload.get("cluster_type") or payload.get("intent_type")
+    intent = _parse_cluster_type(intent_value)
+
+    result = try_join_cluster(
+        user_id=user_id, cluster_id=cluster_id, intent_type=intent, session=session
+    )
     if result.get("ok"):
         return result
     if result.get("reason") == "slot_taken":
@@ -86,11 +102,15 @@ def post_find_or_create(
 ) -> dict[str, Any]:
     user_id = payload.get("user_id")
     quadra_value = payload.get("quadra")
+    cluster_type_value = payload.get("cluster_type") or payload.get("intent_type")
     if user_id is None or quadra_value is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="user_id and quadra are required")
 
     quadra_enum = _parse_quadra(quadra_value)
-    result = find_or_create_cluster_for_user(user_id=user_id, quadra=quadra_enum, session=session)
+    cluster_type_enum = _parse_cluster_type(cluster_type_value)
+    result = find_or_create_cluster_for_user(
+        user_id=user_id, quadra=quadra_enum, cluster_type=cluster_type_enum, session=session
+    )
     return result
 
 

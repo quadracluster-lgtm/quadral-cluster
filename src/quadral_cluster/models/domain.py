@@ -20,7 +20,7 @@ from quadral_cluster.database import Base
 
 if TYPE_CHECKING:
     from .availability import Availability
-    from .cluster import MatchingClusterMember
+    from .cluster import MatchingClusterMember, MatchRequest
     from .preference import Preference
 
 
@@ -63,8 +63,11 @@ class User(Base, TimestampMixin):
         cascade="all, delete-orphan",
         foreign_keys="Preference.to_user_id",
     )
-    matching_membership: Mapped[Optional["MatchingClusterMember"]] = relationship(
-        "MatchingClusterMember", back_populates="user", cascade="all, delete-orphan", uselist=False
+    matching_memberships: Mapped[List["MatchingClusterMember"]] = relationship(
+        "MatchingClusterMember", back_populates="user", cascade="all, delete-orphan"
+    )
+    match_requests: Mapped[List["MatchRequest"]] = relationship(
+        "MatchRequest", back_populates="user", cascade="all, delete-orphan"
     )
 
 
