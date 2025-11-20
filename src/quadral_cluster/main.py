@@ -9,6 +9,7 @@ from .api.routes import router
 from .api.routes_matching import router as matching_router
 from .database import Base, engine
 
+
 app = FastAPI(
     title="Quadral Cluster Core API",
     version="0.3.0",
@@ -30,12 +31,17 @@ app.include_router(matching_router)
 BASE_DIR = Path(__file__).resolve().parent
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
-
+app.mount(
+    "/static",
+    StaticFiles(directory=str(BASE_DIR / "static")),
+    name="static",
+)
 
 
 @app.on_event("startup")
 def on_startup() -> None:
-    from .models import domain  # noqa: F401 - ensure models are imported
+    # Ensure models are imported so that metadata is populated
+    from .models import domain  # noqa: F401
     from .models import availability, cluster, preference  # noqa: F401
 
     Base.metadata.create_all(bind=engine)

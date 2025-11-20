@@ -27,8 +27,13 @@ function renderMessage(containerId, text) {
   el.textContent = text;
 }
 
-// ---------- 1. СОЗДАНИЕ ПРОФИЛЯ ----------
+// Получить выбранный тип намерения (cluster_type)
+function getIntentType() {
+  const select = document.getElementById("intent-type");
+  return select ? select.value : "family";
+}
 
+// ---------- 1. СОЗДАНИЕ ПРОФИЛЯ ----------
 async function handleProfileSubmit(event) {
   event.preventDefault();
 
@@ -74,8 +79,7 @@ async function handleProfileSubmit(event) {
   }
 }
 
-// ---------- 2A. ВСТУПИТЬ В СУЩЕСТВУЮЩИЙ КЛАСТЕР ----------
-
+// ---------- 2А. ВСТУПИТЬ В СУЩЕСТВУЮЩИЙ КЛАСТЕР ----------
 async function fetchOpenClusters() {
   const user = loadCurrentUser();
   const container = document.getElementById("open-clusters");
@@ -88,9 +92,12 @@ async function fetchOpenClusters() {
     return;
   }
 
+  const clusterType = encodeURIComponent(getIntentType());
   const url = `/clusters/open?quadra=${encodeURIComponent(
     user.quadra
-  )}&tim=${encodeURIComponent(user.socionics_type)}&limit=10`;
+  )}&tim=${encodeURIComponent(
+    user.socionics_type
+  )}&limit=10&cluster_type=${clusterType}`;
 
   try {
     const resp = await fetch(url);
@@ -111,7 +118,9 @@ async function fetchOpenClusters() {
       card.className = "cluster-card";
 
       const title = document.createElement("h3");
-      title.textContent = `Кластер #${cluster.id} (${cluster.quadra})`;
+      title.textContent = `Кластер #${cluster.id} (${cluster.quadra}, ${
+        cluster.cluster_type || "family"
+      })`;
       card.appendChild(title);
 
       if (cluster.members && cluster.members.length) {
@@ -144,7 +153,11 @@ async function joinCluster(clusterId) {
     const resp = await fetch("/clusters/join", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cluster_id: clusterId, user_id: user.user_id }),
+      body: JSON.stringify({
+        cluster_id: clusterId,
+        user_id: user.user_id,
+        cluster_type: getIntentType(),
+      }),
     });
 
     const data = await resp.json();
@@ -162,7 +175,6 @@ async function joinCluster(clusterId) {
 }
 
 // ---------- 2Б. СОБРАТЬ НОВЫЙ КЛАСТЕР ----------
-
 async function buildCluster() {
   const user = loadCurrentUser();
   if (!user) {
@@ -174,7 +186,11 @@ async function buildCluster() {
     const resp = await fetch("/clusters/find_or_create", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ user_id: user.user_id, quadra: user.quadra }),
+      body: JSON.stringify({
+        user_id: user.user_id,
+        quadra: user.quadra,
+        cluster_type: getIntentType(),
+      }),
     });
 
     const data = await resp.json();
@@ -212,7 +228,6 @@ async function buildCluster() {
 }
 
 // ---------- ИНИЦИАЛИЗАЦИЯ ----------
-
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("profile-form");
   if (form) {
